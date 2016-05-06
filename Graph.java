@@ -1,11 +1,9 @@
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.*;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
@@ -73,11 +71,16 @@ public class Graph {
         // are the line of text.
 	    job.setInputFormatClass(TextInputFormat.class);
 
+		job.setMapOutputValueClass(EdgeWritable.class);
+
 	    job.setOutputKeyClass(Text.class);
 	    job.setOutputValueClass(Text.class);
+	    
+	    
 
 	    job.waitForCompletion(true);
-	    
+	   
+	   
 	    // Elimina duplicati
 		// Create a new Job
 		job = Job.getInstance();
@@ -97,10 +100,11 @@ public class Graph {
 
 		// Submit the job, then poll for progress until the job is complete
 		job.waitForCompletion(true);
+		
 	    
 	}
 	
-	public static class MyMapper extends Mapper<LongWritable, Text, Text, Text>{
+	public static class MyMapper extends Mapper<LongWritable, Text, Text, EdgeWritable>{
 		private final static IntWritable one = new IntWritable(1);
         private Text word = new Text();
 		
@@ -108,25 +112,30 @@ public class Graph {
 		protected void map(LongWritable key, Text value, Context context)
 				throws IOException, InterruptedException {
 			
-			String[] edge = value.toString().split(" "); 
-			context.write(new Text(edge[0]), value);
-			context.write(new Text(edge[1]), value);
+			String[] edge = value.toString().split(" ");
+			EdgeWritable edgeWr = new EdgeWritable(Integer.parseInt(edge[0]), Integer.parseInt(edge[1]));
+			System.out.println("[MAP] "+edgeWr); 
+			context.write(new Text(edge[0]), edgeWr);
+			context.write(new Text(edge[1]), edgeWr);
 			
 			}
        	}
 	
 	
-	public static class MyReducer extends Reducer<Text, Text, Text, Text>{
+	public static class MyReducer extends Reducer<Text, EdgeWritable, Text, Text>{
 
 		@Override
-		protected void reduce(Text key, Iterable<Text> values, Context context)
+		protected void reduce(Text key, Iterable<EdgeWritable> values, Context context)
 				throws IOException, InterruptedException {
 			
 			Set<String> inEdge = new HashSet<String>();
 			Set<String> outEdge = new HashSet<String>();
 			
-			String keyString = key.toString();
+			//String keyString = key.toString();
+			int keyString = Integer.parseInt(key.toString());
 			String[] edgeArray; 
+			/*
+			OLD CODE
 			for (Text value : values) {
 					edgeArray = value.toString().split(" ");
 					if(edgeArray[1].equals(keyString)){
@@ -135,6 +144,16 @@ public class Graph {
 					} else{
 						outEdge.add(edgeArray[1]);
 					}
+			}
+			*/
+			for (EdgeWritable value : values) {
+				System.out.println("[REDUCE] key: "+keyString+" | edge: "+value);
+				if (value.getOutEdge()==keyString){
+					// This is an inEdge
+					inEdge.add(""+value.getInEdge());
+				} else{
+					outEdge.add(""+value.getOutEdge());
+				}
 			}
 			for(String ie: inEdge){
 				for(String oe: outEdge){
