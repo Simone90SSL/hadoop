@@ -1,0 +1,55 @@
+Pseudocode:
+
+map1 (Key k, Value v){
+	// k , don’t care
+	// v = “x y”, that represents a single edge in the graph
+	write(x,y)
+	write(y,x)
+}
+
+reduce1(Key k, List of values l){
+	// k is a node
+	// l is a list of the neighbors of k
+	
+	// We want to let know at each node, all the neighbors of their neighbors 
+	for each x that belongs to l{
+		l.remove(x)
+		write(x, “k:l”)
+		l.add(x)
+	}
+
+
+map2(Key k, Value v){
+	write(k, v);
+}
+
+reduce2(Key k, List of values l){
+	// k is a node
+	// l is a list of values v such that v = “x:y”, 
+	//	where x is a neighbor of k;
+	//	      y is a set of neighbors of x
+	
+	
+	for each v that belong to l
+		mapOfNeighborOfK.put(x,y)
+	
+	numerator = denominator = 0;
+	if (mapOfNeighborOfK.size() < 2){
+		context.write(k, “0.00”);
+		return;
+	} 
+	denominator = mapOfNeighborOfK.size() * mapOfNeighborOfK.size()-1 / 2;
+
+	while (mapOfNeighborOfK.size() > 1){
+		randomNeig = mapOfNeighborOfK.getRandomKey()
+		neigsOfRandomNeig = mapOfNeighborOfK.get(randomNeig)
+
+		for each y that belongs to neigsOfRandomNeig{
+			if(mapOfNeighborOfK.get(y) != null)	// exists a edge between two neighbors of k
+				numerator++;
+		}
+		mapOfNeighborOfK.remove(randomNeig);		// we remove to not consider twice the edge (x, y) and (y, x)
+	}
+	write (k, numerator / denominator);
+}
+	
